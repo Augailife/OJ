@@ -4,6 +4,7 @@
     class="grid-demo"
     style="margin-bottom: 16px"
     align="center"
+    :wrap="false"
   >
     <a-col flex="auto">
       <a-menu
@@ -21,7 +22,7 @@
             <div class="title">OJ</div>
           </div>
         </a-menu-item>
-        <a-menu-item v-for="item in routes" :key="item.path"
+        <a-menu-item v-for="item in routeArr" :key="item.path"
           >{{ item.name }}
         </a-menu-item>
       </a-menu>
@@ -35,19 +36,32 @@
 <script setup lang="ts">
 import { routes } from "../router/routes";
 import { useRouter } from "vue-router";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useStore } from "vuex";
+import checkAccess from "@/access/checkAccess";
+import accessEnum from "@/access/accessEnum";
 
 const store = useStore();
+const loginUser = store.state.user?.loginUser;
+const routeArr = computed(() => {
+  return routes.filter((item, index) => {
+    if (item.meta?.isHide) {
+      return false;
+    }
+    //权限校验
+    return checkAccess(loginUser, item.meta?.role as string);
+  });
+});
+//三秒后登录
 setTimeout(() => {
   store.dispatch("user/getLoginUser", { userName: "zhao", role: "admin" });
 }, 3000);
 const router = useRouter();
+//控制选中导航栏高亮显示
 const doMenuClick = (key: string) => {
   router.push({ path: key });
 };
 const selectedKeys = ref(["/"]);
-//控制选中导航栏高亮显示
 router.afterEach((to, form, failure) => {
   selectedKeys.value = [to.path];
 });
